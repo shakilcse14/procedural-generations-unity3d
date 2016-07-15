@@ -3,16 +3,16 @@ using System.Collections;
 
 public static class NoiseMap
 {
-    public static float[,] GenerateNoiseMap(int mapWidth, int mapHeight, float scale = 0.001f)
+    public static float[,] GenerateNoiseMap(int mapSize, float scale = 0.1f)
     {
-        float[,] noiseMap = new float[mapWidth, mapHeight];
+        float[,] noiseMap = new float[mapSize, mapSize];
         if(scale <= 0.0f)
         {
-            scale = 0.01f;
+            scale = 0.1f;
         }
-        for (int y = 0; y < mapHeight; y++)
+        for (int y = 0; y < mapSize; y++)
         {
-            for (int x = 0; x < mapWidth; x++)
+            for (int x = 0; x < mapSize; x++)
             {
                 float samepleX = x / scale;
                 float samepleY = y / scale;

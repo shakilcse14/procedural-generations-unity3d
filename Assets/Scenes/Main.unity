@@ -93,6 +93,7 @@ GameObject:
   serializedVersion: 4
   m_Component:
   - 4: {fileID: 16684243}
+  - 114: {fileID: 16684244}
   m_Layer: 0
   m_Name: MapGenerator
   m_TagString: Untagged
@@ -112,6 +113,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 2
+--- !u!114 &16684244
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 16684242}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ac15292f14f98a4c9f3049aee41d98f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  drawMode: 0
+  Size: 50
+  Scale: .100000001
+  TextureToDrawOnGameObject: {fileID: 0}
 --- !u!1 &150609800
 GameObject:
   m_ObjectHideFlags: 0
@@ -160,8 +176,8 @@ Camera:
   m_GameObject: {fileID: 150609800}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 1
-  m_BackGroundColor: {r: .192156866, g: .301960796, b: .474509805, a: .0196078438}
+  m_ClearFlags: 2
+  m_BackGroundColor: {r: 0, g: 0, b: 0, a: .0196078438}
   m_NormalizedViewPortRect:
     serializedVersion: 2
     x: 0
@@ -192,8 +208,8 @@ Transform:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 150609800}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: -10}
+  m_LocalRotation: {x: .707106829, y: 0, z: 0, w: .707106829}
+  m_LocalPosition: {x: 0, y: 500, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
