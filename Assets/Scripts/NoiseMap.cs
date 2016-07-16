@@ -111,4 +111,44 @@ public static class NoiseMap
         texture2D.Apply();
         return texture2D;
     }
+
+    public static MapGenerator.MeshAssets GenerateMeshAssestsFromNoiseMap(float[,] noiseMap)
+    {
+        int noiseMapWidth = noiseMap.GetLength(0);
+        int noiseMapHeight = noiseMap.GetLength(1);
+        
+        MapGenerator.MeshAssets meshAssets = new MapGenerator.MeshAssets();
+        meshAssets.vertices = new Vector3[noiseMapWidth * noiseMapHeight];
+        meshAssets.triangles = new int[(noiseMapWidth - 1) * (noiseMapHeight - 1) * 6];
+        meshAssets.uvs = new Vector2[noiseMapWidth * noiseMapHeight];
+        float topLeftX = (noiseMapWidth - 1) / -2f;
+        float topLeftZ = (noiseMapWidth - 1) / 2f;
+        int indexVertices = 0;
+
+        for (int y = 0; y < noiseMapHeight; y++)
+        {
+            for (int x = 0; x < noiseMapWidth; x++)
+            {
+                meshAssets.vertices[indexVertices] = new Vector3(topLeftX + x, noiseMap[x, y], topLeftZ - y);
+                meshAssets.uvs[indexVertices] = new Vector2(x / (float)noiseMapWidth, y / (float)noiseMapHeight);
+                if (x < noiseMapWidth - 1 && y < noiseMapHeight - 1)
+                {
+                    meshAssets.AddTriangles(indexVertices, indexVertices + noiseMapWidth + 1, indexVertices + noiseMapWidth);
+                    meshAssets.AddTriangles(indexVertices + noiseMapWidth + 1, indexVertices, indexVertices + 1);
+                }
+                indexVertices++;
+            }
+        }
+        return meshAssets;
+    }
+
+    public static Mesh CreateMesh(MapGenerator.MeshAssets meshAssests)
+    {
+        Mesh mesh = new Mesh();
+        mesh.vertices = meshAssests.vertices;
+        mesh.triangles = meshAssests.triangles;
+        mesh.uv = meshAssests.uvs;
+        mesh.RecalculateNormals();
+        return mesh;
+    }
 }

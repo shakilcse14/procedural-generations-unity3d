@@ -10,11 +10,25 @@ public class MapGeneratorEditor : Editor {
         MapGenerator mapGenerator = (MapGenerator)target;
         if (DrawDefaultInspector())
         {
-            mapGenerator.DrawTexture2DNoiseMap();
+            if (mapGenerator.drawMode == MapGenerator.DrawMode.Texture2D)
+            {
+                mapGenerator.DrawTexture2DNoiseMap();
+            }
+            else if (mapGenerator.drawMode == MapGenerator.DrawMode.Mesh)
+            {
+                mapGenerator.DrawMeshNoiseMap();
+            }
         }
         if(GUILayout.Button("Generate Map"))
         {
-            mapGenerator.DrawTexture2DNoiseMap();
+            if (mapGenerator.drawMode == MapGenerator.DrawMode.Texture2D)
+            {
+                mapGenerator.DrawTexture2DNoiseMap();
+            }
+            else if (mapGenerator.drawMode == MapGenerator.DrawMode.Mesh)
+            {
+                mapGenerator.DrawMeshNoiseMap();
+            }
         }
 
 

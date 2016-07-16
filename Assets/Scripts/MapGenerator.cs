@@ -3,16 +3,22 @@ using System.Collections;
 
 public class MapGenerator : MonoBehaviour
 {
-    public enum DrawMode
+    public enum TextureMode
     {
         NoiseTexture2D,
-        ColorNoiseTexture2D,
+        ColorNoiseTexture2D
+    };
+    public enum DrawMode
+    {
+        Texture2D,
         Mesh
     };
     public TextureWrapMode WrapMode = TextureWrapMode.Clamp;
     public FilterMode TextureFilterMode = FilterMode.Point;
 
-    public DrawMode drawMode = DrawMode.NoiseTexture2D;
+    public DrawMode drawMode = DrawMode.Texture2D;
+    public TextureMode textureMode = TextureMode.NoiseTexture2D;
+    public int MeshLocalScaleMultiplier = 10;
     public int Size = 50;
     public float Scale = 0.1f;
     public int Seed = 0;
@@ -27,7 +33,10 @@ public class MapGenerator : MonoBehaviour
 
 
     public GameObject TextureToDrawOnGameObject = null;
-    private GameObject OldGameObject = null;
+    private GameObject OldTextureGameObject = null;
+
+    public GameObject MeshToDrawOnGameObject = null;
+    private GameObject OldMeshGameObject = null;
 
     public void DrawTexture2DNoiseMap()
     {
@@ -35,11 +44,11 @@ public class MapGenerator : MonoBehaviour
         var texture2DNoiseMap = NoiseMap.ToDrawGetTexture2DNoiseMap(noiseMap);
         var texture2DColorNoiseMap = NoiseMap.ToDrawGetColorTexture2DNoiseMap(noiseMap, Assets);
         Texture2D texture2D = null;
-        if(drawMode == DrawMode.NoiseTexture2D)
+        if (textureMode == TextureMode.NoiseTexture2D)
         {
             texture2D = texture2DNoiseMap;
         }
-        else if (drawMode == DrawMode.ColorNoiseTexture2D)
+        else if (textureMode == TextureMode.ColorNoiseTexture2D)
         {
             texture2D = texture2DColorNoiseMap;
         }
@@ -67,7 +76,58 @@ public class MapGenerator : MonoBehaviour
             renderer.sharedMaterial.mainTexture = texture2D;
             renderer.sharedMaterial.DisableKeyword("_NORMALMAP");
         }
-        OldGameObject = TextureToDrawOnGameObject;
+        OldTextureGameObject = TextureToDrawOnGameObject;
+    }
+
+    public void DrawMeshNoiseMap()
+    {
+        var noiseMap = NoiseMap.GenerateNoiseMap(Size, Seed, Octaves, MaxOffSet, MinOffSet, OffSet, Persistence, Lacunarity, Scale);
+        var texture2DNoiseMap = NoiseMap.ToDrawGetTexture2DNoiseMap(noiseMap);
+        var texture2DColorNoiseMap = NoiseMap.ToDrawGetColorTexture2DNoiseMap(noiseMap, Assets);
+        Texture2D texture2D = null;
+        if (textureMode == TextureMode.NoiseTexture2D)
+        {
+            texture2D = texture2DNoiseMap;
+        }
+        else if (textureMode == TextureMode.ColorNoiseTexture2D)
+        {
+            texture2D = texture2DColorNoiseMap;
+        }
+        texture2D.filterMode = TextureFilterMode;
+        texture2D.wrapMode = WrapMode;
+
+        var meshAssets = NoiseMap.GenerateMeshAssestsFromNoiseMap(noiseMap);
+        var mesh = NoiseMap.CreateMesh(meshAssets);
+
+        if (MeshToDrawOnGameObject == null)
+        {
+            MeshToDrawOnGameObject = new GameObject();
+            MeshToDrawOnGameObject.AddComponent<MeshFilter>();
+            MeshToDrawOnGameObject.AddComponent<MeshRenderer>();
+            MeshToDrawOnGameObject.GetComponent<MeshFilter>().sharedMesh = mesh;
+
+            MeshToDrawOnGameObject.name = "DrawNoiseMapMesh";
+            MeshToDrawOnGameObject.transform.position = Vector3.zero;
+            MeshToDrawOnGameObject.transform.localScale = Vector3.one * MeshLocalScaleMultiplier;
+
+            var renderer = MeshToDrawOnGameObject.GetComponent<MeshRenderer>();
+
+            renderer.material = new Material(Shader.Find("Standard"));
+            renderer.sharedMaterial.mainTexture = texture2D;
+            renderer.sharedMaterial.DisableKeyword("_NORMALMAP");
+        }
+        else
+        {
+            MeshToDrawOnGameObject.transform.localScale = Vector3.one * MeshLocalScaleMultiplier;
+
+            MeshToDrawOnGameObject.GetComponent<MeshFilter>().sharedMesh = mesh;
+
+            var renderer = MeshToDrawOnGameObject.GetComponent<MeshRenderer>();
+
+            renderer.sharedMaterial.mainTexture = texture2D;
+            renderer.sharedMaterial.DisableKeyword("_NORMALMAP");
+        }
+        OldMeshGameObject = MeshToDrawOnGameObject;
     }
 
     public void OnValidate()
@@ -84,13 +144,21 @@ public class MapGenerator : MonoBehaviour
 
     public void Reset()
     {
-        if (OldGameObject != null)
+        if (OldTextureGameObject != null)
         {
-            DestroyImmediate(OldGameObject);
-            OldGameObject = null;
+            DestroyImmediate(OldTextureGameObject);
+            OldTextureGameObject = null;
             TextureToDrawOnGameObject = null;
         }
+        if (OldMeshGameObject != null)
+        {
+            DestroyImmediate(OldMeshGameObject);
+            OldMeshGameObject = null;
+            MeshToDrawOnGameObject = null;
+        }
     }
+
+
     [System.Serializable]
     public class MapAssets
     {
@@ -103,5 +171,28 @@ public class MapGenerator : MonoBehaviour
         };
         public DrawType Draw;
         public Color color;
+    }
+
+    public class MeshAssets
+    {
+        public Vector3 [] vertices;
+        public int [] triangles;
+        public Vector2 [] uvs;
+        private int indexTriangles = 0;
+
+        public void AddTriangles(int firstVecticesIndex,int secondVecticesIndex,int thirdVecticesIndex)
+        {
+            if(triangles.Length < firstVecticesIndex || triangles.Length < secondVecticesIndex || triangles.Length < thirdVecticesIndex)
+            {
+                Debug.LogError("Index Out Of Bounds For Adding Triangles Using Vertices Index");
+            }
+            else
+            {
+                triangles[indexTriangles] = firstVecticesIndex;
+                triangles[indexTriangles + 1] = secondVecticesIndex;
+                triangles[indexTriangles + 2] = thirdVecticesIndex;
+                indexTriangles += 3;
+            }
+        }
     }
 }
