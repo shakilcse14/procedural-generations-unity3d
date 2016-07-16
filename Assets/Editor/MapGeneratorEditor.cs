@@ -10,17 +10,11 @@ public class MapGeneratorEditor : Editor {
         MapGenerator mapGenerator = (MapGenerator)target;
         if (DrawDefaultInspector())
         {
-            if (mapGenerator.drawMode == MapGenerator.DrawMode.OnlyTexture2D)
-            {
-                mapGenerator.DrawTexture2DNoiseMap();
-            }
+            mapGenerator.DrawTexture2DNoiseMap();
         }
         if(GUILayout.Button("Generate Map"))
         {
-            if (mapGenerator.drawMode == MapGenerator.DrawMode.OnlyTexture2D)
-            {
-                mapGenerator.DrawTexture2DNoiseMap();
-            }
+            mapGenerator.DrawTexture2DNoiseMap();
         }
 
 
@@ -29,4 +23,5 @@ public class MapGeneratorEditor : Editor {
             UnityEditor.EditorUtility.SetDirty(target);
         }
     }
+
 }
