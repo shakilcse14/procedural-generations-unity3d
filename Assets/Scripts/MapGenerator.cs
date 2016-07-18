@@ -19,7 +19,8 @@ public class MapGenerator : MonoBehaviour
     public DrawMode drawMode = DrawMode.Texture2D;
     public TextureMode textureMode = TextureMode.NoiseTexture2D;
     public int MeshLocalScaleMultiplier = 10;
-    public int Size = 50;
+    [Range(1,241)]
+    public int ChunkSize = 50;
     public float Scale = 0.1f;
     public int Seed = 0;
     public int Octaves = 0;
@@ -29,6 +30,10 @@ public class MapGenerator : MonoBehaviour
     [Range(0.0f, 1.0f)]
     public float Persistence = 0;
     public float Lacunarity = 0;
+    public AnimationCurve CurveOfVerticesNoiseMap;
+    public float NoiseMapMultiplier = 1.0f;
+    [Range(0, 100)]
+    public int LOD = 0;
     public MapAssets[] Assets;
 
 
@@ -40,7 +45,7 @@ public class MapGenerator : MonoBehaviour
 
     public void DrawTexture2DNoiseMap()
     {
-        var noiseMap = NoiseMap.GenerateNoiseMap(Size, Seed, Octaves, MaxOffSet, MinOffSet, OffSet, Persistence, Lacunarity, Scale);
+        var noiseMap = NoiseMap.GenerateNoiseMap(ChunkSize, Seed, Octaves, MaxOffSet, MinOffSet, OffSet, Persistence, Lacunarity, Scale);
         var texture2DNoiseMap = NoiseMap.ToDrawGetTexture2DNoiseMap(noiseMap);
         var texture2DColorNoiseMap = NoiseMap.ToDrawGetColorTexture2DNoiseMap(noiseMap, Assets);
         Texture2D texture2D = null;
@@ -59,7 +64,7 @@ public class MapGenerator : MonoBehaviour
             TextureToDrawOnGameObject.name = "DrawNoiseMapTexture2D";
             DestroyImmediate(TextureToDrawOnGameObject.GetComponent<Collider>());
             TextureToDrawOnGameObject.transform.position = Vector3.zero;
-            TextureToDrawOnGameObject.transform.localScale = new Vector3(Size, 1, Size);
+            TextureToDrawOnGameObject.transform.localScale = new Vector3(ChunkSize, 1, ChunkSize);
             Renderer renderer = TextureToDrawOnGameObject.transform.GetComponent<Renderer>();
             renderer.material = new Material(Shader.Find("Standard"));
             texture2D.filterMode = TextureFilterMode;
@@ -69,7 +74,7 @@ public class MapGenerator : MonoBehaviour
         }
         else
         {
-            TextureToDrawOnGameObject.transform.localScale = new Vector3(Size, 1, Size);
+            TextureToDrawOnGameObject.transform.localScale = new Vector3(ChunkSize, 1, ChunkSize);
             Renderer renderer = TextureToDrawOnGameObject.transform.GetComponent<Renderer>();
             texture2D.filterMode = TextureFilterMode;
             texture2D.wrapMode = WrapMode;
@@ -81,7 +86,7 @@ public class MapGenerator : MonoBehaviour
 
     public void DrawMeshNoiseMap()
     {
-        var noiseMap = NoiseMap.GenerateNoiseMap(Size, Seed, Octaves, MaxOffSet, MinOffSet, OffSet, Persistence, Lacunarity, Scale);
+        var noiseMap = NoiseMap.GenerateNoiseMap(ChunkSize, Seed, Octaves, MaxOffSet, MinOffSet, OffSet, Persistence, Lacunarity, Scale);
         var texture2DNoiseMap = NoiseMap.ToDrawGetTexture2DNoiseMap(noiseMap);
         var texture2DColorNoiseMap = NoiseMap.ToDrawGetColorTexture2DNoiseMap(noiseMap, Assets);
         Texture2D texture2D = null;
@@ -96,7 +101,7 @@ public class MapGenerator : MonoBehaviour
         texture2D.filterMode = TextureFilterMode;
         texture2D.wrapMode = WrapMode;
 
-        var meshAssets = NoiseMap.GenerateMeshAssestsFromNoiseMap(noiseMap);
+        var meshAssets = NoiseMap.GenerateMeshAssestsFromNoiseMap(noiseMap, NoiseMapMultiplier, CurveOfVerticesNoiseMap, LOD, ChunkSize);
         var mesh = NoiseMap.CreateMesh(meshAssets);
 
         if (MeshToDrawOnGameObject == null)
@@ -132,9 +137,17 @@ public class MapGenerator : MonoBehaviour
 
     public void OnValidate()
     {
-        if (Size < 1)
+        if (ChunkSize < 1)
         {
-            Size = 1;
+            ChunkSize = 1;
+        }
+        if (ChunkSize % 2 == 0)
+        {
+            ChunkSize += 1;
+        }
+        if(LOD >= (ChunkSize / 40))
+        {
+            LOD = (ChunkSize) / 40;
         }
         if (Octaves < 0)
         {
@@ -182,7 +195,9 @@ public class MapGenerator : MonoBehaviour
 
         public void AddTriangles(int firstVecticesIndex,int secondVecticesIndex,int thirdVecticesIndex)
         {
-            if(triangles.Length < firstVecticesIndex || triangles.Length < secondVecticesIndex || triangles.Length < thirdVecticesIndex)
+            if (triangles.Length < indexTriangles + 1
+                || triangles.Length < indexTriangles + 2
+                || triangles.Length < indexTriangles + 3)
             {
                 Debug.LogError("Index Out Of Bounds For Adding Triangles Using Vertices Index");
             }

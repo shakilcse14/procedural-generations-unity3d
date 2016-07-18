@@ -8,6 +8,10 @@ public class MapGeneratorEditor : Editor {
     public override void OnInspectorGUI()
     {
         MapGenerator mapGenerator = (MapGenerator)target;
+        if(mapGenerator.ChunkSize % 2 == 0)
+        {
+            mapGenerator.ChunkSize += 1;
+        }
         if (DrawDefaultInspector())
         {
             if (mapGenerator.drawMode == MapGenerator.DrawMode.Texture2D)

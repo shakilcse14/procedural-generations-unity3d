@@ -112,29 +112,33 @@ public static class NoiseMap
         return texture2D;
     }
 
-    public static MapGenerator.MeshAssets GenerateMeshAssestsFromNoiseMap(float[,] noiseMap)
+    public static MapGenerator.MeshAssets GenerateMeshAssestsFromNoiseMap(float[,] noiseMap,
+        float noiseMapMultiplier, AnimationCurve curve, int lOD, int chunkSize)
     {
         int noiseMapWidth = noiseMap.GetLength(0);
         int noiseMapHeight = noiseMap.GetLength(1);
-        
+
         MapGenerator.MeshAssets meshAssets = new MapGenerator.MeshAssets();
-        meshAssets.vertices = new Vector3[noiseMapWidth * noiseMapHeight];
-        meshAssets.triangles = new int[(noiseMapWidth - 1) * (noiseMapHeight - 1) * 6];
-        meshAssets.uvs = new Vector2[noiseMapWidth * noiseMapHeight];
+        int increment = (lOD == 0 ? 1 : lOD * 2);
+        int perLineVectices = (chunkSize - 1) / increment + 1;
+        meshAssets.vertices = new Vector3[perLineVectices * perLineVectices];
+        meshAssets.triangles = new int[(perLineVectices - 1) * (perLineVectices - 1) * 6];
+        meshAssets.uvs = new Vector2[perLineVectices * perLineVectices];
         float topLeftX = (noiseMapWidth - 1) / -2f;
         float topLeftZ = (noiseMapWidth - 1) / 2f;
         int indexVertices = 0;
 
-        for (int y = 0; y < noiseMapHeight; y++)
+        for (int y = 0; y < noiseMapHeight; y += increment)
         {
-            for (int x = 0; x < noiseMapWidth; x++)
+            for (int x = 0; x < noiseMapWidth; x += increment)
             {
-                meshAssets.vertices[indexVertices] = new Vector3(topLeftX + x, noiseMap[x, y], topLeftZ - y);
+                meshAssets.vertices[indexVertices] = new Vector3(topLeftX + x,
+                    curve.Evaluate(noiseMap[x, y]) * noiseMapMultiplier, topLeftZ - y);
                 meshAssets.uvs[indexVertices] = new Vector2(x / (float)noiseMapWidth, y / (float)noiseMapHeight);
                 if (x < noiseMapWidth - 1 && y < noiseMapHeight - 1)
                 {
-                    meshAssets.AddTriangles(indexVertices, indexVertices + noiseMapWidth + 1, indexVertices + noiseMapWidth);
-                    meshAssets.AddTriangles(indexVertices + noiseMapWidth + 1, indexVertices, indexVertices + 1);
+                    meshAssets.AddTriangles(indexVertices, indexVertices + perLineVectices + 1, indexVertices + perLineVectices);
+                    meshAssets.AddTriangles(indexVertices + perLineVectices + 1, indexVertices, indexVertices + 1);
                 }
                 indexVertices++;
             }
