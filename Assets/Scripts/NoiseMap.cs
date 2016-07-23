@@ -3,8 +3,9 @@ using System.Collections;
 
 public static class NoiseMap
 {
-    public static float[,] GenerateNoiseMap(int mapSize, int seedValue, int octaves, int maxOffsetOctaves,
-        int minOffsetOctaves, Vector2 offset, float persistence, float lacunarity, float scale = 0.1f)
+    public static float[,] GenerateNoiseMap(MapGenerator.NormalizeNoiseMapMode normalMapMode, int mapSize, int seedValue, 
+        int octaves, int maxOffsetOctaves, int minOffsetOctaves, Vector2 offset, float persistence,
+        float lacunarity, float scale = 0.1f)
     {
         if(octaves < 0)
         {
@@ -13,11 +14,16 @@ public static class NoiseMap
         System.Random rnd = new System.Random(seedValue);
         Vector2[] octaveOffset = new Vector2[octaves];
         float HalfSize = mapSize / 2.0f;
+        float maxGlobalHeight = 0.0f;
+        float amplitude = 1;
+        float frequency = 1;
         for (int i = 0; i < octaves; i++)
         {
             float offsetX = rnd.Next(minOffsetOctaves, maxOffsetOctaves) + offset.x;
-            float offsetY = rnd.Next(minOffsetOctaves, maxOffsetOctaves) + offset.y;
+            float offsetY = rnd.Next(minOffsetOctaves, maxOffsetOctaves) - offset.y;
             octaveOffset[i] = new Vector2(offsetX, offsetY);
+            maxGlobalHeight += amplitude;
+            amplitude *= persistence;
         }
 
         float[,] noiseMap = new float[mapSize, mapSize];
@@ -31,13 +37,13 @@ public static class NoiseMap
         {
             for (int x = 0; x < mapSize; x++)
             {
-                float amplitude = 1;
-                float frequency = 1;
+                amplitude = 1;
+                frequency = 1;
                 float noiseMapHeight = 0;
                 for (int i = 0; i < octaves; i++)
                 {
-                    float samepleX = ((HalfSize - x) / scale * frequency) + octaveOffset[i].x;
-                    float samepleY = ((HalfSize - y) / scale * frequency) + octaveOffset[i].y;
+                    float samepleX = (x - HalfSize + octaveOffset[i].x) / scale * frequency;
+                    float samepleY = (y - HalfSize + octaveOffset[i].y) / scale * frequency;
 
                     float perlinValue = Mathf.PerlinNoise(samepleX, samepleY) * 2 -1;
                     noiseMapHeight += perlinValue * amplitude;
@@ -59,7 +65,15 @@ public static class NoiseMap
         {
             for (int x = 0; x < mapSize; x++)
             {
-                noiseMap[x, y] = Mathf.InverseLerp(minNoiseMapHeight, maxNoiseMapHeight, noiseMap[x, y]);
+                if (normalMapMode == MapGenerator.NormalizeNoiseMapMode.Local)
+                {
+                    noiseMap[x, y] = Mathf.InverseLerp(minNoiseMapHeight, maxNoiseMapHeight, noiseMap[x, y]);
+                }
+                else if(normalMapMode == MapGenerator.NormalizeNoiseMapMode.Global)
+                {
+                    var normalizedValue = noiseMap[x, y] + 1 / ( 2f * maxGlobalHeight / 1.75f);
+                    noiseMap[x, y] = Mathf.Clamp(normalizedValue, 0, int.MaxValue); ;
+                }
             }
         }
         return noiseMap;
@@ -99,9 +113,13 @@ public static class NoiseMap
             {
                 for (int i = 0; i < assets.Length; i++)
                 {
-                    if (assets[i].HeightInMap >= noiseMap[x, y])
+                    if (assets[i].HeightInMap <= noiseMap[x, y])
                     {
                         color[y * noiseMapHeight + x] = assets[i].color;
+
+                    }
+                    else
+                    {
                         break;
                     }
                 }
@@ -115,6 +133,7 @@ public static class NoiseMap
     public static MapGenerator.MeshAssets GenerateMeshAssestsFromNoiseMap(float[,] noiseMap,
         float noiseMapMultiplier, AnimationCurve curve, int lOD, int chunkSize)
     {
+        AnimationCurve animationCurve = new AnimationCurve(curve.keys);
         int noiseMapWidth = noiseMap.GetLength(0);
         int noiseMapHeight = noiseMap.GetLength(1);
 
@@ -133,7 +152,7 @@ public static class NoiseMap
             for (int x = 0; x < noiseMapWidth; x += increment)
             {
                 meshAssets.vertices[indexVertices] = new Vector3(topLeftX + x,
-                    curve.Evaluate(noiseMap[x, y]) * noiseMapMultiplier, topLeftZ - y);
+                    animationCurve.Evaluate(noiseMap[x, y]) * noiseMapMultiplier, topLeftZ - y);
                 meshAssets.uvs[indexVertices] = new Vector2(x / (float)noiseMapWidth, y / (float)noiseMapHeight);
                 if (x < noiseMapWidth - 1 && y < noiseMapHeight - 1)
                 {

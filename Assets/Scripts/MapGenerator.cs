@@ -1,8 +1,17 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System;
+using System.Threading;
+using System.Collections.Generic;
 
 public class MapGenerator : MonoBehaviour
 {
+    public enum NormalizeNoiseMapMode
+    {
+        Local,
+        Global
+    };
+    public NormalizeNoiseMapMode NormalizeMode = NormalizeNoiseMapMode.Local;
     public enum TextureMode
     {
         NoiseTexture2D,
@@ -43,9 +52,51 @@ public class MapGenerator : MonoBehaviour
     public GameObject MeshToDrawOnGameObject = null;
     private GameObject OldMeshGameObject = null;
 
+    private Queue<ThreadInfo<Data>> ThreadInfo = new Queue<ThreadInfo<Data>>();
+
+
+    void Update()
+    {
+        if (ThreadInfo.Count > 0)
+        {
+            for (int i = 0; i < ThreadInfo.Count; i++)
+            {
+                var threadInfo = ThreadInfo.Dequeue();
+                threadInfo.callback(threadInfo.parameter);
+            }
+        }
+    }
+
+
+    public void RequestData(Vector2 position, Action<Data> callback)
+    {
+        ThreadStart threadStart = delegate
+        {
+            DataThread(position, callback);
+        };
+        new Thread(threadStart).Start();
+    }
+
+    private void DataThread(Vector2 position, Action<Data> callback)
+    {
+        var noiseMap = NoiseMap.GenerateNoiseMap(NormalizeMode, ChunkSize, Seed, Octaves, MaxOffSet,
+            MinOffSet, position + OffSet, Persistence, Lacunarity, Scale);
+        //var noiseMap = NoiseMap.GenerateNoiseMap(NormalizeMode, ChunkSize, Seed, Octaves, MaxOffSet,
+        //    MinOffSet, OffSet, Persistence, Lacunarity, Scale);
+        var meshAssets = NoiseMap.GenerateMeshAssestsFromNoiseMap(noiseMap, NoiseMapMultiplier,
+            CurveOfVerticesNoiseMap, LOD, ChunkSize);
+        Data data = new Data(noiseMap, meshAssets, position + "");
+        Debug.LogWarning(position + " Drawing ..");
+        lock (ThreadInfo)
+        {
+            ThreadInfo.Enqueue(new ThreadInfo<Data>(callback, data));
+        }
+    }
+
     public void DrawTexture2DNoiseMap()
     {
-        var noiseMap = NoiseMap.GenerateNoiseMap(ChunkSize, Seed, Octaves, MaxOffSet, MinOffSet, OffSet, Persistence, Lacunarity, Scale);
+        var noiseMap = NoiseMap.GenerateNoiseMap(NormalizeMode, ChunkSize, Seed, Octaves, MaxOffSet, MinOffSet,
+            Vector2.zero + OffSet, Persistence, Lacunarity, Scale);
         var texture2DNoiseMap = NoiseMap.ToDrawGetTexture2DNoiseMap(noiseMap);
         var texture2DColorNoiseMap = NoiseMap.ToDrawGetColorTexture2DNoiseMap(noiseMap, Assets);
         Texture2D texture2D = null;
@@ -86,7 +137,8 @@ public class MapGenerator : MonoBehaviour
 
     public void DrawMeshNoiseMap()
     {
-        var noiseMap = NoiseMap.GenerateNoiseMap(ChunkSize, Seed, Octaves, MaxOffSet, MinOffSet, OffSet, Persistence, Lacunarity, Scale);
+        var noiseMap = NoiseMap.GenerateNoiseMap(NormalizeMode, ChunkSize, Seed, Octaves, MaxOffSet, MinOffSet,
+            Vector2.zero + OffSet, Persistence, Lacunarity, Scale);
         var texture2DNoiseMap = NoiseMap.ToDrawGetTexture2DNoiseMap(noiseMap);
         var texture2DColorNoiseMap = NoiseMap.ToDrawGetColorTexture2DNoiseMap(noiseMap, Assets);
         Texture2D texture2D = null;
@@ -208,6 +260,32 @@ public class MapGenerator : MonoBehaviour
                 triangles[indexTriangles + 2] = thirdVecticesIndex;
                 indexTriangles += 3;
             }
+        }
+    }
+
+    public class Data
+    {
+        public readonly string name;
+        public readonly float[,] noiseMap;
+        public readonly MeshAssets meshAssets;
+
+        public Data(float[,] noiseMap, MeshAssets meshAssets, String name)
+        {
+            this.noiseMap = noiseMap;
+            this.meshAssets = meshAssets;
+            this.name = name;
+        }
+    }
+
+    public class ThreadInfo<T>
+    {
+        public readonly Action<T> callback;
+        public readonly T parameter;
+
+        public ThreadInfo(Action<T> callback, T parameter)
+        {
+            this.callback = callback;
+            this.parameter = parameter;
         }
     }
 }
