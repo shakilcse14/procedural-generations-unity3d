@@ -35,13 +35,12 @@ public class MultipleMapGenerator : MonoBehaviour
         {
             cameraViewerPosition = new Vector2(Player.position.x, Player.position.z);
             CheckInEveryLimitedMove();
-            Player = null;
         }
     }
 
     void ClearUnWantedChunks()
     {
-        //Debug.LogWarning("Clearing ... ..");
+        Debug.LogWarning("Clearing ... ..");
         for (int i = 0; i < lastVisibleChunk.Count; i++)
         {
             lastVisibleChunk[i].SetVisible(false);
@@ -105,7 +104,7 @@ public class MultipleMapGenerator : MonoBehaviour
 
             
             MapChunkObject.transform.parent = Parent;
-            //SetVisible(false);
+            SetVisible(false);
             _MapGenerator.RequestData(Position, OnDataReceived);
         }
 
@@ -127,8 +126,6 @@ public class MultipleMapGenerator : MonoBehaviour
             meshGameObject.AddComponent<MeshFilter>();
             meshGameObject.AddComponent<MeshRenderer>();
             
-            //meshGameObject.transform.localScale = Vector3.one * MeshLocalScaleMultiplier;
-
             return meshGameObject;
         }
 

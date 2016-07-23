@@ -81,11 +81,9 @@ public class MapGenerator : MonoBehaviour
     {
         var noiseMap = NoiseMap.GenerateNoiseMap(NormalizeMode, ChunkSize, Seed, Octaves, MaxOffSet,
             MinOffSet, position + OffSet, Persistence, Lacunarity, Scale);
-        //var noiseMap = NoiseMap.GenerateNoiseMap(NormalizeMode, ChunkSize, Seed, Octaves, MaxOffSet,
-        //    MinOffSet, OffSet, Persistence, Lacunarity, Scale);
         var meshAssets = NoiseMap.GenerateMeshAssestsFromNoiseMap(noiseMap, NoiseMapMultiplier,
             CurveOfVerticesNoiseMap, LOD, ChunkSize);
-        Data data = new Data(noiseMap, meshAssets, position + "");
+        Data data = new Data(noiseMap, meshAssets, "Pos: " + position + " Offset: " + (position + OffSet));
         Debug.LogWarning(position + " Drawing ..");
         lock (ThreadInfo)
         {
